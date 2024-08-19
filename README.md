@@ -1,9 +1,3 @@
-> [!IMPORTANT]
-> This project is part of the [DevOpsTheHardWay][DevOpsTheHardWay] course. Please [onboard the course][onboarding_tutorial] before starting. 
-> 
-> The project builds upon the work done in previous projects. 
-> To ensure a smooth learning experience, we recommend completing the [Docker][Docker], [AWS][AWS] and [Terraform][Terraform] projects first.
-
 # The Polybot Service: Kubernetes Project
 
 ## Background and goals
@@ -275,7 +269,7 @@ Deploy the following monitoring stack:
 > Ensure that all servers are configured to persist data stored in EBS volumes (utilizing the EBS SCI driver installed earlier).
 
 
-## Part V: Cluster nodes autoscaling 
+## Part V (optional): Cluster nodes autoscaling 
 
 You've probably noticed that your cluster is not **node-autoscalable** by default.
 Adding a new worker node requires a manual provisioning of a new EC2 instance and executing the `kubeadm join` command to enroll the node to the cluster.
@@ -354,9 +348,6 @@ You must first create the ASG and define the Launch Template yourself, such that
 [onboarding_tutorial]: https://github.com/exit-zero-academy/DevOpsTheHardWay/blob/main/tutorials/onboarding.md
 [github_actions]: ../../actions
 
-[Docker]: https://github.com/exit-zero-academy/PolybotServiceDocker
-[AWS]: https://github.com/exit-zero-academy/PolybotServiceAWS
-[Terraform]: https://github.com/exit-zero-academy/PolybotServiceTerraform
 
 [k8s_architecture_kubeadm]: https://exit-zero-academy.github.io/DevOpsTheHardWayAssets/img/k8s_architecture_kubeadm.png
 [k8s_cni]: https://exit-zero-academy.github.io/DevOpsTheHardWayAssets/img/k8s_cni.png
