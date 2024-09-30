@@ -128,11 +128,12 @@ When deploying a Kubernetes cluster, there are 2 layers of networking communicat
 You must deploy a [Container Network Interface (CNI)](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/) network add-on so that your Pods can communicate with each other. 
 There are many [addons that implement the CNI](https://kubernetes.io/docs/concepts/cluster-administration/addons/#networking-and-network-policy). 
 
-We'll install [Flannel](https://github.com/flannel-io/flannel), simply by:
+We'll install [Calico](https://docs.tigera.io/calico/latest/about/), simply by:
 
 ```bash
-kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.2/manifests/calico.yaml
 ```
+
 
 ### Install the AWS cloud controller manager
 
