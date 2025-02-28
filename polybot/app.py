@@ -28,7 +28,7 @@ def webhook():
 def results():
     prediction_id = request.args.get('predictionId')
 
-    # TODO use the prediction_id to retrieve results from DynamoDB and send to the end-user
+    # TODO use the prediction_id to retrieve results from MongoDB and send to the end-user
 
     chat_id = ...
     text_results = ...

@@ -77,7 +77,7 @@ def consume():
                     'time': time.time()
                 }
 
-                # TODO store the prediction_summary in a DynamoDB table
+                # TODO store the prediction_summary in a MongoDB table
                 # TODO perform a GET request to Polybot to `/results` endpoint
 
             # Delete the message from the queue as the job is considered as DONE

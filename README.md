@@ -98,7 +98,7 @@ You must first create the ASG and define the Launch Template yourself, such that
 
 #### Guidelines
 
-1. Extend your Terraform configuration files to provision the necessary ASG and Launch Template.
+1. Provision the necessary ASG and Launch Template:
    - Note that when a new worker instance is being launched, it should automatically run the `kubeadm join` command to join the cluster. Since the join token is valid for a limited time (and worker nodes can be created anytime), you have to ensure that a valid token is always available. Here are some ideas to handle this:
      - Periodically generate a join token on the control-plane node and store it in AWS Secrets Manager. Worker nodes can then fetch this token during initialization.
      - Create a Lambda function that connects to the control-plane over SSH and generates a new join token. This Lambda function is triggered as part of the worker node initialization process. 
