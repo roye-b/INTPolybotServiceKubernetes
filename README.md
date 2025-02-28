@@ -12,7 +12,7 @@ Let's get started...
 
 ## Part I: Create a Kubernetes cluster 
 
-If havn't done yet, follow [Provision cluster on AWS with kubeadm](k8s_provision_cluster_kubeadm_aws.md) to create a two EC2 nodes cluster using `kubeadm`. 
+If havn't done yet, follow the **Provision cluster on AWS with kubeadm** tutorial to create a two EC2 nodes cluster using `kubeadm`. 
 
 ## Part II: Deploy the Polybot service
 
