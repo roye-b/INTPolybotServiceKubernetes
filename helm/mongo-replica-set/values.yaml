@@ -125,7 +125,7 @@ instances:
   - name: mongo3
     port: 27017
 
-storageSize: 10Gi
+storageSize: 1Gi
 
 image: mongo
 imageTag: "5"
