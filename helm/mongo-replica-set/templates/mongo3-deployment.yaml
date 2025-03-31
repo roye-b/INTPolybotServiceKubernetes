@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mongo3
+  labels:
+    app: mongo
+    instance: mongo3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+      instance: mongo3
+  template:
+    metadata:
+      labels:
+        app: mongo
+        instance: mongo3
+    spec:
+      containers:
+        - name: mongo
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          ports:
+            - containerPort: 27017
+          command:
+            - mongod
+            - --replSet
+            - {{ .Values.replicaSetName }}
+            - --bind_ip
+            - localhost,$(hostname)
+          volumeMounts:
+            - name: mongo3-data
+              mountPath: /data/db
+      volumes:
+        - name: mongo3-data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-mongo3-pvc

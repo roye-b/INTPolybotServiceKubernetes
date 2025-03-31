@@ -1,0 +1,15 @@
+{{- range .Values.instances }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $.Release.Name }}-{{ .name }}-pvc
+  labels:
+    app: mongo
+    instance: {{ .name }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $.Values.storageSize }}
+{{- end }}
