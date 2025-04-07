@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # Name MUST match statefulset.spec.serviceName
+  name: {{ .Release.Name }}-mongo-headless
+  labels:
+    app: mongo
+    release: {{ .Release.Name }} # Match the selector labels
+spec:
+  # clusterIP: None makes this a headless service
+  clusterIP: None
+  ports:
+    - port: 27017
+      targetPort: 27017 # Can use the name 'mongo' if defined in container ports
+      name: mongo
+  # Selects the pods managed by the StatefulSet
+  selector:
+    app: mongo
+    release: {{ .Release.Name }}
