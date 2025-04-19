@@ -6,7 +6,7 @@ metadata:
     app: mongodb
 spec:
   serviceName: "mongodb-headless"
-  replicas: 3
+  replicas: 4
   selector:
     matchLabels:
       app: mongodb
