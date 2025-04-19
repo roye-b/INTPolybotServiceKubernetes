@@ -1,76 +1,37 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Release.Name }}-mongo # Base name for the StatefulSet
-  labels:
-    app: mongo
+  name: mongodb
 spec:
-  # ServiceName MUST match the metadata.name of the Headless Service below
-  serviceName: {{ .Release.Name }}-mongo-headless
-  # Create 3 replicas (pods) for the replica set
+  serviceName: "mongodb"
   replicas: 3
-  # Selector to find pods managed by this StatefulSet
   selector:
     matchLabels:
-      app: mongo
-      release: {{ .Release.Name }} # Added release label for better selection
-  # Pod template
+      app: mongodb
   template:
     metadata:
       labels:
-        app: mongo # Pods need the selector label
-        release: {{ .Release.Name }} # Match the selector
+        app: mongodb
     spec:
-      # Give pods time to shut down gracefully
-      terminationGracePeriodSeconds: 30
       containers:
-        - name: mongo
-          image: {{ .Values.image }}:{{ .Values.imageTag }}
-          ports:
-            - containerPort: 27017
-              name: mongo # Added port name
-          command:
-            - mongod
-            - --replSet
-            - {{ .Values.replicaSetName }}
-            # Bind to 0.0.0.0 to allow connections from other pods in the replica set
-            # The stable network ID provided by the StatefulSet + Headless Service handles reachability.
-            - --bind_ip
-            # - localhost,$(POD_IP) # Alternative using Downward API if needed, but 0.0.0.0 is common
-            - 0.0.0.0 # Listen on all interfaces within the pod
-          # Readiness probe to check if MongoDB is ready to accept connections
-          readinessProbe:
-            tcpSocket:
-              port: 27017
-            initialDelaySeconds: 15
-            periodSeconds: 10
-          # Liveness probe to check if the mongod process is running
-          livenessProbe:
-            tcpSocket:
-              port: 27017
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          env: # Example of how to potentially pass POD_IP if needed for --bind_ip
-            - name: POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-          volumeMounts:
-            # Mount the persistent volume at /data/db
-            - name: mongo-data # This MUST match the volumeClaimTemplates.metadata.name below
-              mountPath: /data/db
-      # No need for 'volumes:' here for the main data volume,
-      # it's handled by volumeClaimTemplates
-  # Define the template for PersistentVolumeClaims
-  volumeClaimTemplates:
-    - metadata:
-        name: mongo-data # Name used in volumeMounts above
-        labels: # Add labels to the PVCs if needed
-          app: mongo
-          release: {{ .Release.Name }}
-      spec:
-        storageClassName: local-storage # Use the storage class you defined
-        accessModes: ["ReadWriteOnce"] # Standard access mode for block storage
-        resources:
-          requests:
-            storage: {{ .Values.storageSize }} # Use storage size from values.yaml
+      - name: mongodb
+        image: mongo:latest
+        ports:
+        - containerPort: 27017
+        command:
+          - bash
+          - "-c"
+          - |
+            # Initialize MongoDB replica set
+            mongod --replSet rs0 --bind_ip_all
+  #       volumeMounts:
+  #       - name: mongo-data
+  #         mountPath: /data/db
+  # volumeClaimTemplates:
+  # - metadata:
+  #     name: mongo-data
+  #   spec:
+  #     accessModes: ["ReadWriteOnce"]
+  #     resources:
+  #       requests:
+  #         storage: 1Gi
