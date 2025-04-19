@@ -2,8 +2,10 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mongodb
+  labels:
+    app: mongodb
 spec:
-  serviceName: "mongodb"
+  serviceName: "mongodb-headless"
   replicas: 3
   selector:
     matchLabels:
@@ -13,25 +15,50 @@ spec:
       labels:
         app: mongodb
     spec:
+      terminationGracePeriodSeconds: 30
       containers:
       - name: mongodb
-        image: mongo:latest
+        image: mongo:5.0
         ports:
         - containerPort: 27017
+          name: mongo
         command:
-          - bash
-          - "-c"
-          - |
-            # Initialize MongoDB replica set
-            mongod --replSet rs0 --bind_ip_all
-  #       volumeMounts:
-  #       - name: mongo-data
-  #         mountPath: /data/db
-  # volumeClaimTemplates:
-  # - metadata:
-  #     name: mongo-data
-  #   spec:
-  #     accessModes: ["ReadWriteOnce"]
-  #     resources:
-  #       requests:
-  #         storage: 1Gi
+          - mongod
+          - "--replSet"
+          - "rs0"
+          - "--bind_ip_all"
+          - "--port"
+          - "27017"
+        volumeMounts:
+        - name: mongo-data
+          mountPath: /data/db
+        livenessProbe:
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: local-storage
