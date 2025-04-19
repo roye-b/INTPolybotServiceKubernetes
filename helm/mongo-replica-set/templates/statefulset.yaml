@@ -1,34 +1,40 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: mongodb
+  name: mongo-replica-set-mongo
   labels:
-    app: mongodb
+    app: mongo
+    release: mongo-replica-set
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: mongo-replica-set
+    meta.helm.sh/release-namespace: default
 spec:
-  serviceName: "mongodb-headless"
-  replicas: 4
+  serviceName: "mongo-replica-set-mongo-headless"
+  replicas: 3
   selector:
     matchLabels:
-      app: mongodb
+      app: mongo
+      release: mongo-replica-set
   template:
     metadata:
       labels:
-        app: mongodb
+        app: mongo
+        release: mongo-replica-set
     spec:
       terminationGracePeriodSeconds: 30
       containers:
-      - name: mongodb
+      - name: mongo
         image: mongo:5.0
         ports:
         - containerPort: 27017
           name: mongo
         command:
           - mongod
-          - "--replSet"
-          - "rs0"
-          - "--bind_ip_all"
-          - "--port"
-          - "27017"
+          - --replSet
+          - myReplicaSet
+          - --bind_ip
+          - 0.0.0.0
         volumeMounts:
         - name: mongo-data
           mountPath: /data/db
@@ -56,6 +62,9 @@ spec:
   volumeClaimTemplates:
   - metadata:
       name: mongo-data
+      labels:
+        app: mongo
+        release: mongo-replica-set
     spec:
       accessModes: ["ReadWriteOnce"]
       resources:
