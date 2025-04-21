@@ -22,7 +22,7 @@ spec:
         app: mongo
         release: mongo-replica-set
     spec:
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 90
       containers:
       - name: mongo
         image: mongo:5.0
@@ -41,16 +41,16 @@ spec:
         livenessProbe:
           tcpSocket:
             port: 27017
-          initialDelaySeconds: 30
+          initialDelaySeconds: 90
           periodSeconds: 10
-          timeoutSeconds: 5
+          timeoutSeconds: 10
           failureThreshold: 3
         readinessProbe:
           tcpSocket:
             port: 27017
-          initialDelaySeconds: 15
+          initialDelaySeconds: 90
           periodSeconds: 10
-          timeoutSeconds: 5
+          timeoutSeconds: 10
           failureThreshold: 3
         resources:
           requests:
