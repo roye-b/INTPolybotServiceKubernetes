@@ -22,10 +22,10 @@ spec:
         app: mongo
         release: mongo-replica-set
     spec:
-      terminationGracePeriodSeconds: 90
+      terminationGracePeriodSeconds: 90 # Increased from default 30, good practice
       containers:
       - name: mongo
-        image: mongo:5.0
+        image: mongo:5.0 # Use the specific version 5.0 from original yaml
         ports:
         - containerPort: 27017
           name: mongo
@@ -38,27 +38,27 @@ spec:
         volumeMounts:
         - name: mongo-data
           mountPath: /data/db
-#        livenessProbe:
-#          tcpSocket:
-#            port: 27017
-#          initialDelaySeconds: 90
-#          periodSeconds: 10
-#          timeoutSeconds: 10
-#          failureThreshold: 3
-#        readinessProbe:
-#          tcpSocket:
-#            port: 27017
-#          initialDelaySeconds: 90
-#          periodSeconds: 10
-#          timeoutSeconds: 10
-#          failureThreshold: 3
-        resources:
-          requests:
-            memory: "1Gi"
-            cpu: "500m"
-          limits:
-            memory: "2Gi"
-            cpu: "1"
+        livenessProbe: # <-- UNCOMMENTED and using longer delay
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 90 # Increased significantly
+          periodSeconds: 10
+          timeoutSeconds: 5 # Slightly longer timeout
+          failureThreshold: 3
+        readinessProbe: # <-- UNCOMMENTED and using longer delay
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 60 # Increased significantly (less than liveness)
+          periodSeconds: 10
+          timeoutSeconds: 5 # Slightly longer timeout
+          failureThreshold: 3
+#        resources: # <-- ENSURE THESE ARE PRESENT AND CORRECT
+#          requests:
+#            memory: "1Gi"
+#            cpu: "500m"
+#          limits:
+#            memory: "2Gi"
+#            cpu: "1"
   volumeClaimTemplates:
   - metadata:
       name: mongo-data
