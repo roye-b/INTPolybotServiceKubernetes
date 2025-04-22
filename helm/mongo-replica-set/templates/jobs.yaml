@@ -8,9 +8,9 @@ spec:
       restartPolicy: Never
       containers:
         - name: mongo-init
-          image: mongo:5
+          image: mongo:latest
           command: ["sh", "-c"]
-          args:
+          args:S
             - |
               until mongosh --host mongodb-0.mongodb.default.svc.cluster.local --eval "print('MongoDB is up')" >/dev/null 2>&1; do
                 sleep 2
