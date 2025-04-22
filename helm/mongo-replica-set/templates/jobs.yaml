@@ -1,4 +1,4 @@
-apiVersion: batch/v1
+piVersion: batch/v1
 kind: Job
 metadata:
   name: mongodb-init
@@ -12,16 +12,16 @@ spec:
           command: ["sh", "-c"]
           args:
             - |
-              until mongosh --host mongo-replica-set-mongo-0.mongodb-headless.default.svc.cluster.local:27017 --eval "print('MongoDB is up')" >/dev/null 2>&1; do 
-                sleep 10
-              done 
-
-              mongosh --host mongo-replica-set-mongo-0.mongodb-headless.default.svc.cluster.local:27017 --eval '
-              rs.initiate({ 
-                _id: "myReplicaSet", 
-                members: [ 
-                  { _id: 0, host: "mongo-replica-set-mongo-0.mongodb-headless.default.svc.cluster.local:27017", priority: 2 }, 
-                  { _id: 1, host: "mongo-replica-set-mongo-1.mongodb-headless.default.svc.cluster.local:27017", priority: 1 }, 
-                  { _id: 2, host: "mongo-replica-set-mongo-2.mongodb-headless.default.svc.cluster.local:27017", priority: 1 } 
-                ] 
-              })'
+              until mongosh --host mongodb-0.mongodb.default.svc.cluster.local --eval "print('MongoDB is up')" >/dev/null 2>&1; do
+                sleep 2
+              done
+              
+              mongosh --host mongodb-0.mongodb.default.svc.cluster.local --eval '
+              rs.initiate({
+                _id: "rs0",
+                members: [
+                  { _id: 0, host: "mongodb-0.mongodb.default.svc.cluster.local:27017", priority: 2 },
+                  { _id: 1, host: "mongodb-1.mongodb.default.svc.cluster.local:27017", priority: 1 },
+                  { _id: 2, host: "mongodb-2.mongodb.default.svc.cluster.local:27017", priority: 1 }
+                ]
+              })
