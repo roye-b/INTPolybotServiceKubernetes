@@ -1,6 +1,0 @@
-apiVersion: v1
-name: mongo-replica-set
-description: A Helm chart for deploying a MongoDB replica set
-type: application
-version: 0.1.0
-appVersion: "5"

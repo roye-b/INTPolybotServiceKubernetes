@@ -6,7 +6,7 @@ metadata:
   labels:
     app: mongo
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: mongo
@@ -20,11 +20,3 @@ spec:
           image: mongo:latest
           ports:
             - containerPort: 27017
-          # Removed the MONGO_INITDB_ROOT_USERNAME and MONGO_INITDB_ROOT_PASSWORD env variables.
-          volumeMounts:
-            - name: mongo-persistent-storage
-              mountPath: /data/db
-      volumes:
-        - name: mongo-persistent-storage
-          persistentVolumeClaim:
-            claimName: mongo-pvc

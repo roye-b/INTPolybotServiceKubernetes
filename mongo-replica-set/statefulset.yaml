@@ -19,14 +19,3 @@ spec:
         ports:
         - containerPort: 27017
           name: mongo
-        volumeMounts:
-        - name: mongo-persistent-storage
-          mountPath: /data/db
-  volumeClaimTemplates:
-  - metadata:
-      name: mongo-persistent-storage
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 1Gi
