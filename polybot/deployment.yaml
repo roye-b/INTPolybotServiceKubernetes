@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: polybot-deployment
+  namespace: default
+  labels:
+    app: polybot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: polybot
+  template:
+    metadata:
+      labels:
+        app: polybot
+    spec:
+      containers:
+        - name: polybot
+          image: polybot:royeb/polybot
+          ports:
+            - containerPort: 8443
