@@ -21,6 +21,5 @@ spec:
         command:
           - bash
           - "-c"
-          - |
-            mongod --replSet rs0 --bind_ip_all &
-            sleep infinity
+          - "mongodb --replSet rs0 --bind_ip_all & sleep infinity"
+
