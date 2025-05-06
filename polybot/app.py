@@ -11,7 +11,7 @@ def get_telegram_token():
     client = boto3.client("secretsmanager", region_name="eu-north-1")
     response = client.get_secret_value(SecretId="telegram/bot/token")
     secret = json.loads(response["SecretString"])
-    return secret["TELEGRAM_TOKEN"]
+    return secret["telegram_token"]
 # TODO load TELEGRAM_TOKEN value from Secret Manager
 TELEGRAM_TOKEN = get_telegram_token()
 
