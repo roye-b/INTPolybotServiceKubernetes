@@ -2,14 +2,18 @@ import flask
 from flask import request
 import os
 from bot import ObjectDetectionBot
+import boto3
+import json
 
 app = flask.Flask(__name__)
 
-
+def get_telegram_token():
+    client = boto3.client("secretsmanager", region_name="eu-north-1")
+    response = client.get_secret_value(SecretId="telegram/bot/token")
+    secret = json.loads(response["SecretString"])
+    return secret["TELEGRAM_TOKEN"]
 # TODO load TELEGRAM_TOKEN value from Secret Manager
-TELEGRAM_TOKEN = ...
-
-TELEGRAM_APP_URL = os.environ['TELEGRAM_APP_URL']
+TELEGRAM_TOKEN = get_telegram_token()
 
 
 @app.route('/', methods=['GET'])
