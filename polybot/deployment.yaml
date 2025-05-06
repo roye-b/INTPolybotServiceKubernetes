@@ -17,6 +17,6 @@ spec:
     spec:
       containers:
         - name: polybot
-          image: polybot:royeb/polybot
+          image: royeb/polybot
           ports:
             - containerPort: 8443
