@@ -2,64 +2,54 @@ import flask
 from flask import request
 import os
 import boto3
-from botocore.exceptions import ClientError
 from bot import ObjectDetectionBot
 import logging
-import json
+from botocore.exceptions import ClientError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 app = flask.Flask(__name__)
 
-# Load required environment variables
-TELEGRAM_APP_URL = os.environ.get('TELEGRAM_APP_URL')
-S3_BUCKET_NAME = os.environ.get('BUCKET_NAME')
 
-# Validate required variables
-if not TELEGRAM_APP_URL or not S3_BUCKET_NAME:
-    raise ValueError("Missing required environment variables: TELEGRAM_APP_URL or BUCKET_NAME")
+TELEGRAM_APP_URL = os.environ['TELEGRAM_APP_URL']
+S3_BUCKET_NAME = os.environ['BUCKET_NAME']
+s3_client = boto3.client('s3')
 
-# Get Telegram token from AWS Secrets Manager
 def get_telegram_token_from_aws():
     secret_name = "telegram/bot/token"
     region_name = "eu-north-1"
 
-    session = boto3.session.Session()
-    client = session.client(
-        service_name='secretsmanager',
-        region_name=region_name
-    )
-
     try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
+        session = boto3.session.Session()
+        client = session.client(
+            service_name='secretsmanager',
+            region_name=region_name
         )
-        secret_string = get_secret_value_response['SecretString']
-        try:
-            # Try to parse as JSON if the secret is a JSON string
-            secret_dict = json.loads(secret_string)
-            return secret_dict.get("TELEGRAM_TOKEN")
-        except json.JSONDecodeError:
-            # If not JSON, treat as plain token string
-            return secret_string.strip()
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        secret = get_secret_value_response['SecretString']
+        return secret.strip()
     except ClientError as e:
-        logger.error(f"Failed to retrieve secret from AWS: {e}")
-        raise
+        logger.error(f"Failed to retrieve Telegram token from Secrets Manager: {e}")
+        return None
 
-# Get the token from AWS
+# Try getting the token from AWS Secrets Manager first
 TELEGRAM_TOKEN = get_telegram_token_from_aws()
 
-# Validate token format
+# Fallback options (optional)
+if not TELEGRAM_TOKEN:
+    secret_file_path = '/run/secrets/telegram_token'
+    if os.path.exists(secret_file_path):
+        with open(secret_file_path, 'r') as secret_file:
+            TELEGRAM_TOKEN = secret_file.read().strip()
+    else:
+        TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
+
+# Validate token
 if not TELEGRAM_TOKEN or ':' not in TELEGRAM_TOKEN:
-    logger.warning("Telegram token is missing or invalid. It must contain a colon.")
-    raise ValueError("Missing or invalid TELEGRAM_TOKEN")
+    logger.warning("Telegram token is not set or invalid. Ensure it's passed via AWS Secrets Manager, file, or environment variable.")
+else:
+    print(f"Telegram token: {TELEGRAM_TOKEN}")
 
-print(f"Telegram token: {TELEGRAM_TOKEN}")
-
-# Initialize the S3 client
-s3_client = boto3.client('s3')
-
-# Initialize the bot
 bot = ObjectDetectionBot(TELEGRAM_TOKEN, TELEGRAM_APP_URL, S3_BUCKET_NAME, s3_client)
 
 @app.route('/', methods=['GET'])
