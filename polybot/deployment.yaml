@@ -20,4 +20,3 @@ spec:
           image: royeb/polybot
           ports:
             - containerPort: 8443
-          env:
