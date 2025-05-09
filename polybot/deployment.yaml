@@ -20,10 +20,4 @@ spec:
           image: royeb/polybot
           ports:
             - containerPort: 8443
-          env:
-                - name: TELEGRAM_TOKEN
-                  valueFrom:
-                    secretKeyRef:
-                      name: telegram-bot-token
-                      key: TELEGRAM_TOKEN
 
