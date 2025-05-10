@@ -94,7 +94,7 @@ def webhook():
 
 
 if __name__ == "__main__":
-    # מומלץ להשתמש בשרת WSGI ברמה של production כמו gunicorn או uWSGI
+    #  להשתמש בשרת WSGI ברמה של production כמו gunicorn או uWSGI
     # , אם מריצים עם gunicorn: gunicorn -w 4 -b 0.0.0.0:8443 app:app
     logger.info(f"Starting Flask development server on port 8443 for bot webhook...")
     app.run(host='0.0.0.0', port=8443)
