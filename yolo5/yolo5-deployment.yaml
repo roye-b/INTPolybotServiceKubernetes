@@ -18,14 +18,15 @@ spec:
       containers:
         - name: yolo5
           image: royeb/yolo5:V2
+          imagePullPolicy: Always
           env:
             - name: S3_BUCKET_NAME
               value: "royeb-k8s"
             - name: SQS_QUEUE_URL
-              value: "https://sqs.eu-north-1.amazonaws.com/352708296901/itsik-netflix-events"
+              value: "https://sqs.eu-north-1.amazonaws.com/352708296901/royeb-sqs"
             - name: POLYBOT_URL
-              value: "http://svc-polybot:8443/"
+              value: "http://polybot-service.default.svc.cluster.local"
             - name: AWS_REGION
               value: "eu-north-1"
             - name: MONGO_CONNECTION_STRING
-              value: "mongodb://mongo-service.default.svc.cluster.local:27017/"
+              value: "mongodb://mongodb.default.svc.cluster.local:27017/"
