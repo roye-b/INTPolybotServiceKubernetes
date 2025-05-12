@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yolo5-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yolo5
+  template:
+    metadata:
+      labels:
+        app: yolo5
+    spec:
+      containers:
+        - name: yolo5
+          image: royeb/yolo5:V2
+          env:
+            - name: AWS_REGION
+              value: "eu-central-1"
+            - name: SQS_QUEUE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: yolo5-secrets
+                  key: queue_url
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: yolo5-secrets
+                  key: mongo_uri

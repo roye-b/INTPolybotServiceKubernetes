@@ -22,4 +22,4 @@ spec:
             - containerPort: 8443
           env:
             - name: TELEGRAM_APP_URL
-              value: "https://f975-5-29-23-65.ngrok-free.app"
+              value: "https://0c2c-5-29-23-65.ngrok-free.app"
