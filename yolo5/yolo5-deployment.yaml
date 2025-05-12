@@ -2,8 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: yolo5-deployment
+  namespace: default
+  labels:
+    app: yolo5
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: yolo5
@@ -16,15 +19,13 @@ spec:
         - name: yolo5
           image: royeb/yolo5:V2
           env:
-            - name: AWS_REGION
-              value: "eu-central-1"
+            - name: S3_BUCKET_NAME
+              value: "royeb-k8s"
             - name: SQS_QUEUE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: yolo5-secrets
-                  key: queue_url
-            - name: MONGO_URI
-              valueFrom:
-                secretKeyRef:
-                  name: yolo5-secrets
-                  key: mongo_uri
+              value: "https://sqs.eu-north-1.amazonaws.com/352708296901/itsik-netflix-events"
+            - name: POLYBOT_URL
+              value: "http://svc-polybot:8443/"
+            - name: AWS_REGION
+              value: "eu-north-1"
+            - name: MONGO_CONNECTION_STRING
+              value: "mongodb://mongo-service.default.svc.cluster.local:27017/"

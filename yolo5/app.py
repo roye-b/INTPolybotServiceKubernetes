@@ -1,88 +1,152 @@
-import time
-from pathlib import Path
-from detect import run
-import yaml
-from loguru import logger
-import os
 import boto3
+import os
+import time
+import logging
+import requests
+import numpy as np
+import torch
+from pymongo import MongoClient, errors
+from PIL import Image
+import io
+import json
+from dotenv import load_dotenv
 
-images_bucket = os.environ['BUCKET_NAME']
-queue_name = os.environ['SQS_QUEUE_NAME']
+load_dotenv()
 
-sqs_client = boto3.client('sqs', region_name='YOUR_REGION_HERE')
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-with open("data/coco128.yaml", "r") as stream:
-    names = yaml.safe_load(stream)['names']
+# Load AWS credentials
+aws_region = os.getenv("AWS_REGION", "eu-north-1")
+sqs_queue_url = os.getenv("SQS_QUEUE_URL")
+s3_bucket_name = os.getenv("S3_BUCKET_NAME")
+mongo_connection_string = os.getenv("MONGO_CONNECTION_STRING")
+polybot_url = os.getenv("POLYBOT_URL", "http://svc-polybot:8443.192")
 
+logging.info(f"Value of MONGO_CONNECTION_STRING from environment: '{mongo_connection_string}'")
 
-def consume():
+# Initialize AWS clients
+sqs = boto3.client(
+    'sqs',
+    region_name=aws_region
+
+)
+
+s3 = boto3.client(
+    's3',
+    region_name=aws_region
+
+)
+
+# MongoDB connection
+if not mongo_connection_string:
+    logging.error("MONGO_CONNECTION_STRING environment variable not set.")
+    exit(1)
+
+try:
+    mongo_client = MongoClient(mongo_connection_string)
+    db = mongo_client['yolo5_db']
+    predictions_collection = db['predictions']
+    logging.info("Connected to MongoDB successfully.")
+except errors.PyMongoError as e:
+    logging.error(f"Failed to connect to MongoDB: {e}")
+    exit(1)
+
+# Load YOLOv5 model
+model = None
+try:
+    model_path = 'yolov5'
+    model = torch.hub.load(model_path, 'custom', path='yolov5s.pt', source='local')
+    logging.info("YOLOv5 model loaded successfully.")
+except Exception as e:
+    logging.error(f"Error loading YOLOv5 model: {e}")
+    model = None
+
+def process_sqs_message(sqs_client): # added sqs_client
+    """Poll SQS queue and process messages."""
     while True:
-        response = sqs_client.receive_message(QueueUrl=queue_name, MaxNumberOfMessages=1, WaitTimeSeconds=5)
+        if not sqs_queue_url:
+            logging.warning("SQS_QUEUE_URL not set. Skipping SQS polling.")
+            time.sleep(10)
+            continue
+
+        logging.info("Polling SQS for messages...")
+
+        response = sqs_client.receive_message( # using sqs_client
+            QueueUrl=sqs_queue_url,
+            MaxNumberOfMessages=1,
+            WaitTimeSeconds=10
+        )
 
         if 'Messages' in response:
-            message = response['Messages'][0]['Body']
-            receipt_handle = response['Messages'][0]['ReceiptHandle']
+            logging.info("Messages received from SQS.")
+            message = response['Messages'][0]
+            receipt_handle = message['ReceiptHandle']
+            try:
+                job_data = json.loads(message['Body'])
+            except json.JSONDecodeError:
+                logging.error(f"Error decoding SQS message body (not JSON): {message['Body']}")
+                sqs_client.delete_message( # using sqs_client
+                    QueueUrl=sqs_queue_url,
+                    ReceiptHandle=receipt_handle
+                )
+                continue
 
-            # Use the ReceiptHandle as a prediction UUID
-            prediction_id = response['Messages'][0]['MessageId']
+            img_name = job_data['imgName']
+            chat_id = job_data['chat_id']
 
-            logger.info(f'prediction: {prediction_id}. start processing')
+            logging.info(f"Processing job for {img_name}")
 
-            # Receives a URL parameter representing the image to download from S3
-            img_name = ...  # TODO extract from `message`
-            chat_id = ...  # TODO extract from `message`
-            original_img_path = ...  # TODO download img_name from S3, store the local image path in original_img_path
+            try:
+                response = s3.get_object(Bucket=s3_bucket_name, Key=img_name)
+                image_data = response['Body'].read()
 
-            logger.info(f'prediction: {prediction_id}/{original_img_path}. Download img completed')
+                image = Image.open(io.BytesIO(image_data)).convert('RGB')
+                image = np.array(image)
 
-            # Predicts the objects in the image
-            run(
-                weights='yolov5s.pt',
-                data='data/coco128.yaml',
-                source=original_img_path,
-                project='static/data',
-                name=prediction_id,
-                save_txt=True
+                if model is not None:
+                    results = model(image)
+                    predictions = [
+                        {
+                            "class": int(pred[5]),
+                            "label": model.names[int(pred[5])],
+                            "confidence": float(pred[4]),
+                            "bbox": [float(pred[0]), float(pred[1]), float(pred[2]), float(pred[3])]
+                        }
+                        for pred in results.xyxy[0].tolist()
+                    ]
+
+                    prediction_id = str(predictions_collection.insert_one({
+                        "imgName": img_name,
+                        "chat_id": chat_id,
+                        "predictions": predictions,
+                        "timestamp": time.time()
+                    }).inserted_id)
+                    logging.info(f"Prediction results saved with predictionId: {prediction_id}")
+
+                    send_results_to_polybot(prediction_id, chat_id)
+                else:
+                    logging.error("Model is not loaded")
+            except Exception as e:
+                logging.error(f"Error processing job {img_name}: {e}")
+
+            sqs_client.delete_message( # using sqs_client
+                QueueUrl=sqs_queue_url,
+                ReceiptHandle=receipt_handle
             )
+        else:
+            logging.info("No messages in the queue. Waiting...")
 
-            logger.info(f'prediction: {prediction_id}/{original_img_path}. done')
-
-            # This is the path for the predicted image with labels
-            # The predicted image typically includes bounding boxes drawn around the detected objects, along with class labels and possibly confidence scores.
-            predicted_img_path = Path(f'static/data/{prediction_id}/{original_img_path}')
-
-            # TODO Uploads the predicted image (predicted_img_path) to S3 (be careful not to override the original image).
-
-            # Parse prediction labels and create a summary
-            pred_summary_path = Path(f'static/data/{prediction_id}/labels/{original_img_path.split(".")[0]}.txt')
-            if pred_summary_path.exists():
-                with open(pred_summary_path) as f:
-                    labels = f.read().splitlines()
-                    labels = [line.split(' ') for line in labels]
-                    labels = [{
-                        'class': names[int(l[0])],
-                        'cx': float(l[1]),
-                        'cy': float(l[2]),
-                        'width': float(l[3]),
-                        'height': float(l[4]),
-                    } for l in labels]
-
-                logger.info(f'prediction: {prediction_id}/{original_img_path}. prediction summary:\n\n{labels}')
-
-                prediction_summary = {
-                    'prediction_id': prediction_id,
-                    'original_img_path': original_img_path,
-                    'predicted_img_path': predicted_img_path,
-                    'labels': labels,
-                    'time': time.time()
-                }
-
-                # TODO store the prediction_summary in a MongoDB table
-                # TODO perform a GET request to Polybot to `/results` endpoint
-
-            # Delete the message from the queue as the job is considered as DONE
-            sqs_client.delete_message(QueueUrl=queue_name, ReceiptHandle=receipt_handle)
-
+def send_results_to_polybot(prediction_id, chat_id):
+    """Send the processed results to Polybot's /results endpoint."""
+    try:
+        response = requests.post(polybot_url, json={"predictionId": prediction_id, "chat_id": chat_id})
+        if response.status_code == 200:
+            logging.info(f"Results sent to Polybot for chat_id {chat_id}")
+        else:
+            logging.error(f"Failed to send results to Polybot for chat_id {chat_id}, status code: {response.status_code}, response: {response.text}")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error sending results to Polybot: {e}")
 
 if __name__ == "__main__":
-    consume()
+    process_sqs_message(sqs) # passing sqs
