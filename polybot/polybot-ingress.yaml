@@ -3,10 +3,8 @@ kind: Ingress
 metadata:
   name: polybot-ingress
   namespace: default
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-    # nginx.ingress.kubernetes.io/rewrite-target: /$2  <-- You might not need this now
 spec:
+  ingressClassName: nginx   # ✅ זה השדה החדש והנכון
   rules:
   - host: royeb.devops-int-college.com
     http:
