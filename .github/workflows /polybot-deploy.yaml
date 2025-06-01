@@ -2,10 +2,15 @@ name: polybot stack build-deploy
 
 on:
   push:
+    paths:
+      - "polybot/"
     branches:
-     - main
-#    paths:
-#     - 'polybot/**'
+      - main
+  pull_request:
+    paths:
+      - "polybot/"
+    branches:
+      - main
 
 permissions:
   contents: write
