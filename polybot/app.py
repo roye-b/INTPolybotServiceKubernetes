@@ -91,7 +91,7 @@ def webhook():
     logger.info(f"Received message for bot: {req.get('message', {}).get('message_id', 'N/A')}")
     bot.handle_message(req['message'])
     return 'Ok', 200
-
+#
 if __name__ == "__main__":
     #  להשתמש בשרת WSGI ברמה של production כמו gunicorn או uWSGI
     # , אם מריצים עם gunicorn: gunicorn -w 4 -b 0.0.0.0:8443 app:app
