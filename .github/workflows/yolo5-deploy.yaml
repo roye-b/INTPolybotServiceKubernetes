@@ -40,7 +40,7 @@ jobs:
   UpdatePolybotInfra:
     runs-on: ubuntu-latest
     needs:
-      - PolybotBuild
+      - Yolo5Build
 
     steps:
       - name: Trigger PolybotInfra Dispatch Workflow
