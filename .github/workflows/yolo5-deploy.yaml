@@ -9,49 +9,48 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  Yolo5Build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
+
       - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y yq
 
       - name: Build and push image
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
-          DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD=${{ secrets.DOCKERHUB_PASSWORD }}
-
-
-          if [[ -z $DOCKERHUB_USERNAME ]] || [[ -z $DOCKERHUB_PASSWORD ]]; then
-            echo DOCKERHUB_USERNAME and DOCKERHUB_PASSWORD secrets should be configured
+          if [[ -z "$DOCKERHUB_USERNAME" ]] || [[ -z "$DOCKERHUB_PASSWORD" ]]; then
+            echo "DOCKERHUB_USERNAME and DOCKERHUB_PASSWORD secrets should be configured"
             exit 1
           fi
 
-          docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+          docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
           echo "login success"
 
           cd yolo5
           IMAGE_NAME=$DOCKERHUB_USERNAME/yolo5:v1.1.${{ github.run_number }}
-          docker build --push -t $IMAGE_NAME .
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          docker build --push -t "$IMAGE_NAME" .
           echo "image build and pushed"
 
   UpdatePolybotInfra:
     runs-on: ubuntu-latest
-    needs:
-      - Yolo5Build
+    needs: Yolo5Build
 
     steps:
       - name: Trigger PolybotInfra Dispatch Workflow
         run: |
-          # Curl to PolybotInfra repo and activate the workflow dispatch
-          echo "Triggering PolybotInfra Dispatch Workflow with the following params : {service_name:polybot,image:$IMAGE_NAME}"
-          
+          echo "Triggering PolybotInfra Dispatch Workflow with the following params: {service_name:yolo5,image:${{ env.IMAGE_NAME }}}"
+
           curl -L \
           -X POST \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ secrets.POLYBOTINFRA_TOKEN }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           https://api.github.com/repos/roye-b/PolybotInfra/actions/workflows/service-deploy.yaml/dispatches \
-          -d "{\"ref\":\"main\",\"inputs\":{\"service_name\":\"polybot\",\"image\":\"$IMAGE_NAME\"}}"
+          -d "{\"ref\":\"main\",\"inputs\":{\"service_name\":\"yolo5\",\"image\":\"${{ env.IMAGE_NAME }}\"}}"
